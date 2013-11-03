@@ -45,8 +45,7 @@ public class SecretsList extends BaseAdapter{
 		if (convertView == null) {
 			LayoutInflater inflater = context.getLayoutInflater();
 			element = inflater.inflate(R.layout.secret_row, null);
-		} 
-		else
+		} else
 			element = convertView;
 
 		TextView description = (TextView) element.findViewById(R.id.secret);
@@ -63,6 +62,10 @@ public class SecretsList extends BaseAdapter{
 		Secret secret = new Secret(description);
 		secrets.add(secret);
 		this.notifyDataSetChanged();
+	}
+	
+	public void removeSecrets(){
+		secrets.clear();
 	}
 
 }
