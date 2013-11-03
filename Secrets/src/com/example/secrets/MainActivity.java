@@ -22,6 +22,7 @@ import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -34,11 +35,16 @@ public class MainActivity extends Activity {
 	private static String fileName = "mySecrets";
 	private Context context;
 	private File mySecretFile;
+	private ListView secretsList;
+	private SecretsList adapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.activity_main);
+		secretsList = (ListView)findViewById(android.R.id.list);
+		adapter = new SecretsList(this);
+		secretsList.setAdapter(adapter);
 		context = (Context) this;
 		String path = context.getFilesDir().getAbsolutePath() + "/" + fileName;
 		mySecretFile = new File(path);
@@ -86,11 +92,7 @@ public class MainActivity extends Activity {
 	private final class CancelOnClickListener implements
 			DialogInterface.OnClickListener {
 		public void onClick(DialogInterface dialog, int which) {
-			MainActivity.this.finish();
-			Intent intent = new Intent(Intent.ACTION_MAIN);
-			intent.addCategory(Intent.CATEGORY_HOME);
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			startActivity(intent);
+			exitApplication();
 		}
 	}
 
@@ -131,6 +133,7 @@ public class MainActivity extends Activity {
 					if (line.equalsIgnoreCase(password)) {
 						
 						passwordAlertDialog.dismiss();
+						displayList();
 					} 
 					else {
 						Toast message = Toast.makeText(context,
@@ -139,11 +142,7 @@ public class MainActivity extends Activity {
 						authenticationTrials++;
 
 						if (authenticationTrials == 3) {
-							MainActivity.this.finish();
-							Intent intent = new Intent(Intent.ACTION_MAIN);
-							intent.addCategory(Intent.CATEGORY_HOME);
-							intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-							startActivity(intent);
+							exitApplication();
 						} 
 						else {
 							showDialog(DIALOG_ALERT);
@@ -159,4 +158,40 @@ public class MainActivity extends Activity {
 		}
 
 	}
+	
+	public void displayList(){
+		
+		adapter.removeSecrets();
+		
+		try {
+			FileInputStream inputStream;
+			InputStreamReader inputStreamReader;
+			BufferedReader bufferedReader;
+			StringBuilder sb = new StringBuilder();
+			String line;
+			
+			inputStream = context.openFileInput(fileName);
+			inputStreamReader = new InputStreamReader(inputStream);
+			bufferedReader = new BufferedReader(inputStreamReader);
+			int i = 0;
+			while ((line = bufferedReader.readLine()) != null) {
+				if(i != 0){
+					adapter.addNewSecret(line);
+				}
+				i++;
+			}
+			
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+		public void exitApplication(){
+			MainActivity.this.finish();
+			Intent intent = new Intent(Intent.ACTION_MAIN);
+			intent.addCategory(Intent.CATEGORY_HOME);
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			startActivity(intent);
+		}
 }
