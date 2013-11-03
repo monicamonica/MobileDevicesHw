@@ -38,11 +38,10 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		
+		this.setContentView(R.layout.activity_main);
 		context = (Context) this;
 		String path = context.getFilesDir().getAbsolutePath() + "/" + fileName;
 		mySecretFile = new File(path);
-
 		showDialog(DIALOG_ALERT);
 	}
 
@@ -66,6 +65,7 @@ public class MainActivity extends Activity {
 			builder.setTitle(R.string.passwordAlertDialog).setView(dialogView)
 					.setPositiveButton("Ok", new OkOnClickListener())
 					.setNegativeButton("Cancel", new CancelOnClickListener());
+			
 			passwordAlertDialog = builder.create();
 			passwordAlertDialog.show();
 
@@ -98,18 +98,20 @@ public class MainActivity extends Activity {
 
 		if (!mySecretFile.exists()) {
 			try {
+				
 				FileOutputStream outputStream;
 				outputStream = openFileOutput(fileName, Context.MODE_PRIVATE);
 				outputStream.write(password.getBytes());
 				outputStream.close();
 
-				Toast message = Toast.makeText(context,
-						"Your password has been saved.", 100);
+				Toast message = Toast.makeText(context,	"Your password has been saved.", 100);
 				message.show();
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		} else {
+		}
+		else {
 			FileInputStream inputStream;
 			InputStreamReader inputStreamReader;
 			BufferedReader bufferedReader;
@@ -117,6 +119,7 @@ public class MainActivity extends Activity {
 			String line;
 
 			try {
+				
 				inputStream = context.openFileInput(fileName);
 				inputStreamReader = new InputStreamReader(inputStream);
 				bufferedReader = new BufferedReader(inputStreamReader);
@@ -124,11 +127,10 @@ public class MainActivity extends Activity {
 				if ((line = bufferedReader.readLine()) != null) {
 					Log.d("pass", line);
 					Log.d("pass", password);
+					
 					if (line.equalsIgnoreCase(password)) {
-						Toast message = Toast.makeText(context,
-								"Your password is correct.", 200);
-						message.show();
-						this.setContentView(R.layout.activity_main);
+						
+						passwordAlertDialog.dismiss();
 					} 
 					else {
 						Toast message = Toast.makeText(context,
