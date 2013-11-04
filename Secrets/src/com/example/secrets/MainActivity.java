@@ -19,16 +19,21 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
+	private static final String EXTRA_MESSAGE = "com.example.secrets.MESSAGE";
 	private static final int DIALOG_ALERT = 10;
 	private static int authenticationTrials = 0;
+	private boolean isEditEnabled = false;
+	private boolean isDeleteEnabled = false;
 	private AlertDialog passwordAlertDialog;
 	private EditText passwordInput;
 	private String password;
@@ -45,6 +50,37 @@ public class MainActivity extends Activity {
 		secretsList = (ListView)findViewById(android.R.id.list);
 		adapter = new SecretsList(this);
 		secretsList.setAdapter(adapter);
+		//enabling/disabling of edit and delete buttons
+		secretsList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+			@Override
+			public void onItemSelected(AdapterView<?> parentView, View childView,
+					int position, long id) {
+				// TODO Auto-generated method stub
+				int selectedCount = secretsList.getCheckedItemCount();
+				if (selectedCount > 0){
+					isDeleteEnabled = true;
+					if (selectedCount == 1){
+						isEditEnabled = true;
+					}
+					else{
+						isEditEnabled = false;
+					}
+				}
+				else{
+					isDeleteEnabled = false;
+					isEditEnabled = false;
+				}
+				invalidateOptionsMenu();
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView<?> parentView) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 		context = (Context) this;
 		String path = context.getFilesDir().getAbsolutePath() + "/" + fileName;
 		mySecretFile = new File(path);
@@ -55,7 +91,50 @@ public class MainActivity extends Activity {
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		//Enable/Disable edit button
+		MenuItem item = menu.findItem(R.id.action_edit);
+		item.setEnabled(isEditEnabled);
+		//Enable/Disable delete button
+		item = menu.findItem(R.id.action_delete);
+		item.setEnabled(isDeleteEnabled);
 		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item){
+		//check which ActionBar button was pressed
+		switch (item.getItemId()){
+		case (R.id.action_add):
+			openAdd();
+			return true;
+		case (R.id.action_edit):
+			openEdit();
+			return true;
+		case (R.id.action_delete):
+			deleteSecrets();
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
+	
+	private void openAdd(){
+		Intent intent = new Intent(this, SaveEditActivity.class);
+		startActivity(intent);
+	}
+	
+	private void openEdit(){
+		Intent intent = new Intent(this, SaveEditActivity.class);
+		//get selected item's message
+		Secret selectedSecret = (Secret)adapter.getItem(secretsList.getSelectedItemPosition());
+		String intentMessage = selectedSecret.description;
+		intent.putExtra(EXTRA_MESSAGE, intentMessage);
+		startActivity(intent);
+	}
+	
+	private void deleteSecrets(){
+		// TODO Put delete functionality here
+		
 	}
 
 	@Override
