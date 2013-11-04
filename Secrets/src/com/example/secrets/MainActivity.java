@@ -14,6 +14,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -84,6 +85,7 @@ public class MainActivity extends Activity {
 		context = (Context) this;
 		String path = context.getFilesDir().getAbsolutePath() + "/" + fileName;
 		mySecretFile = new File(path);
+		//TODO make the following dialog (password prompt) appear only when you launch the application 
 		showDialog(DIALOG_ALERT);
 	}
 
@@ -266,11 +268,18 @@ public class MainActivity extends Activity {
 		}
 	}
 	
-		public void exitApplication(){
-			MainActivity.this.finish();
-			Intent intent = new Intent(Intent.ACTION_MAIN);
-			intent.addCategory(Intent.CATEGORY_HOME);
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			startActivity(intent);
-		}
+	public void exitApplication(){
+		MainActivity.this.finish();
+		Intent intent = new Intent(Intent.ACTION_MAIN);
+		intent.addCategory(Intent.CATEGORY_HOME);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+		startActivity(intent);
+	}
+	
+	@Override
+	protected void onDestroy(){
+		super.onDestroy();
+		authenticationTrials = 0;
+	}
+	
 }
