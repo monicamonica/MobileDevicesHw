@@ -14,10 +14,12 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,69 +45,92 @@ public class MainActivity extends Activity {
 	private File mySecretFile;
 	private ListView secretsList;
 	private SecretsList adapter;
+	private static final String PREFS_PASS = "PassPref";
+
+	private static boolean passwordIsChecked = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		this.setContentView(R.layout.activity_main);
-		secretsList = (ListView)findViewById(android.R.id.list);
+		secretsList = (ListView) findViewById(android.R.id.list);
 		adapter = new SecretsList(this);
 		secretsList.setAdapter(adapter);
-		//enabling/disabling of edit and delete buttons
+		// enabling/disabling of edit and delete buttons
 		secretsList.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
-			@Override
-			public void onItemSelected(AdapterView<?> parentView, View childView,
-					int position, long id) {
-				// TODO Auto-generated method stub
-				int selectedCount = secretsList.getCheckedItemCount();
-				if (selectedCount > 0){
-					isDeleteEnabled = true;
-					if (selectedCount == 1){
-						isEditEnabled = true;
+					@Override
+					public void onItemSelected(AdapterView<?> parentView,
+							View childView, int position, long id) {
+						// TODO Auto-generated method stub
+						int selectedCount = secretsList.getCheckedItemCount();
+						if (selectedCount > 0) {
+							isDeleteEnabled = true;
+							if (selectedCount == 1) {
+								isEditEnabled = true;
+							} else {
+								isEditEnabled = false;
+							}
+						} else {
+							isDeleteEnabled = false;
+							isEditEnabled = false;
+						}
+						invalidateOptionsMenu();
 					}
-					else{
-						isEditEnabled = false;
-					}
-				}
-				else{
-					isDeleteEnabled = false;
-					isEditEnabled = false;
-				}
-				invalidateOptionsMenu();
-			}
 
-			@Override
-			public void onNothingSelected(AdapterView<?> parentView) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
+					@Override
+					public void onNothingSelected(AdapterView<?> parentView) {
+						// TODO Auto-generated method stub
+
+					}
+
+				});
 		context = (Context) this;
 		String path = context.getFilesDir().getAbsolutePath() + "/" + fileName;
 		mySecretFile = new File(path);
-		//TODO make the following dialog (password prompt) appear only when you launch the application 
-		showDialog(DIALOG_ALERT);
+
+		if(savedInstanceState == null)
+		{
+			showDialog(DIALOG_ALERT);
+		}
+
+			
+			
+	}
+	
+	@Override
+	//it saves smth=> bundle is not null
+	protected void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+		Log.d("dialog", "onSaveInstance called");
+		Log.d("dialog", outState+"");
+	}
+	@Override
+	//it is never called
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onRestoreInstanceState(savedInstanceState);
+		
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-		//Enable/Disable edit button
+		// Enable/Disable edit button
 		MenuItem item = menu.findItem(R.id.action_edit);
 		item.setEnabled(isEditEnabled);
-		//Enable/Disable delete button
+		// Enable/Disable delete button
 		item = menu.findItem(R.id.action_delete);
 		item.setEnabled(isDeleteEnabled);
 		return true;
 	}
-	
+
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item){
-		//check which ActionBar button was pressed
-		switch (item.getItemId()){
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// check which ActionBar button was pressed
+		switch (item.getItemId()) {
 		case (R.id.action_add):
 			openAdd();
 			return true;
@@ -119,24 +144,25 @@ public class MainActivity extends Activity {
 			return super.onOptionsItemSelected(item);
 		}
 	}
-	
-	private void openAdd(){
+
+	private void openAdd() {
 		Intent intent = new Intent(this, SaveEditActivity.class);
 		startActivity(intent);
 	}
-	
-	private void openEdit(){
+
+	private void openEdit() {
 		Intent intent = new Intent(this, SaveEditActivity.class);
-		//get selected item's message
-		Secret selectedSecret = (Secret)adapter.getItem(secretsList.getSelectedItemPosition());
+		// get selected item's message
+		Secret selectedSecret = (Secret) adapter.getItem(secretsList
+				.getSelectedItemPosition());
 		String intentMessage = selectedSecret.description;
 		intent.putExtra(EXTRA_MESSAGE, intentMessage);
 		startActivity(intent);
 	}
-	
-	private void deleteSecrets(){
+
+	private void deleteSecrets() {
 		// TODO Put delete functionality here
-		
+
 	}
 
 	@Override
@@ -151,8 +177,21 @@ public class MainActivity extends Activity {
 
 			builder.setTitle(R.string.passwordAlertDialog).setView(dialogView)
 					.setPositiveButton("Ok", new OkOnClickListener())
-					.setNegativeButton("Cancel", new CancelOnClickListener());
-			
+					.setNegativeButton("Cancel", new CancelOnClickListener())
+			.setOnKeyListener(new DialogInterface.OnKeyListener() {
+		        @Override
+		        public boolean onKey (DialogInterface dialog, int keyCode, KeyEvent event) {
+		            if (keyCode == KeyEvent.KEYCODE_BACK && 
+		                event.getAction() == KeyEvent.ACTION_UP && 
+		                !event.isCanceled()) {
+		                dialog.cancel();
+		               exitApplication();
+		                return true;
+		            }
+		            return false;
+		        }
+		    });
+
 			passwordAlertDialog = builder.create();
 			passwordAlertDialog.show();
 
@@ -181,20 +220,21 @@ public class MainActivity extends Activity {
 
 		if (!mySecretFile.exists()) {
 			try {
-				
+
 				FileOutputStream outputStream;
 				outputStream = openFileOutput(fileName, Context.MODE_PRIVATE);
 				outputStream.write(password.getBytes());
 				outputStream.close();
 
-				Toast message = Toast.makeText(context,	"Your password has been saved.", 100);
+				Toast message = Toast.makeText(context,
+						"Your password has been saved.", 100);
 				message.show();
-				
+				this.passwordIsChecked = true;
+
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}
-		else {
+		} else {
 			FileInputStream inputStream;
 			InputStreamReader inputStreamReader;
 			BufferedReader bufferedReader;
@@ -202,7 +242,7 @@ public class MainActivity extends Activity {
 			String line;
 
 			try {
-				
+
 				inputStream = context.openFileInput(fileName);
 				inputStreamReader = new InputStreamReader(inputStream);
 				bufferedReader = new BufferedReader(inputStreamReader);
@@ -210,13 +250,12 @@ public class MainActivity extends Activity {
 				if ((line = bufferedReader.readLine()) != null) {
 					Log.d("pass", line);
 					Log.d("pass", password);
-					
+
 					if (line.equalsIgnoreCase(password)) {
-						
+						this.passwordIsChecked = true;
 						passwordAlertDialog.dismiss();
 						displayList();
-					} 
-					else {
+					} else {
 						Toast message = Toast.makeText(context,
 								"Incorrect password!", 300);
 						message.show();
@@ -224,8 +263,7 @@ public class MainActivity extends Activity {
 
 						if (authenticationTrials == 3) {
 							exitApplication();
-						} 
-						else {
+						} else {
 							showDialog(DIALOG_ALERT);
 						}
 
@@ -239,47 +277,76 @@ public class MainActivity extends Activity {
 		}
 
 	}
-	
-	public void displayList(){
-		
+
+	public void displayList() {
+
 		adapter.removeSecrets();
-		
+
 		try {
 			FileInputStream inputStream;
 			InputStreamReader inputStreamReader;
 			BufferedReader bufferedReader;
 			StringBuilder sb = new StringBuilder();
 			String line;
-			
+
 			inputStream = context.openFileInput(fileName);
 			inputStreamReader = new InputStreamReader(inputStream);
 			bufferedReader = new BufferedReader(inputStreamReader);
 			int i = 0;
 			while ((line = bufferedReader.readLine()) != null) {
-				if(i != 0){
+				if (i != 0) {
 					adapter.addNewSecret(line);
 				}
 				i++;
 			}
-			
-			
-		}catch (Exception e) {
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	public void exitApplication(){
+
+	public void exitApplication() {
 		MainActivity.this.finish();
 		Intent intent = new Intent(Intent.ACTION_MAIN);
 		intent.addCategory(Intent.CATEGORY_HOME);
 		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		startActivity(intent);
 	}
-	
+
+
+
 	@Override
-	protected void onDestroy(){
-		super.onDestroy();
-		authenticationTrials = 0;
+	protected void onPause() {
+		// TODO Auto-generated method stub
+		super.onPause();
+	
 	}
 	
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+		  SharedPreferences preferences = getPreferences(MODE_PRIVATE);
+		  this.passwordIsChecked = preferences.getBoolean("passwordIsChecked", false); // value to store    
+		  Log.d("dialog", "on resume "+this.passwordIsChecked);
+//		  if(!this.passwordIsChecked)
+//			  showDialog(DIALOG_ALERT);
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		this.authenticationTrials = 0;
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	    if (keyCode == KeyEvent.KEYCODE_BACK) {
+	    	Log.d("dialog", "back is pressed");
+	        exitApplication();
+	        return true;
+	    }
+	    return super.onKeyDown(keyCode, event);
+	}
+
 }
