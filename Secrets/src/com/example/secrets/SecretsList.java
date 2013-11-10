@@ -3,6 +3,7 @@ package com.example.secrets;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -49,23 +50,25 @@ public class SecretsList extends BaseAdapter{
 			element = convertView;
 
 		TextView description = (TextView) element.findViewById(R.id.secret);
-	
-
-		description.setText(secrets.get(position).description);
-
-
+		description.setText(secrets.get(position).getDescription());
 		return element;
-		
+	}
+	
+	public void editSecretAt(String description, int position){
+		secrets.get(position).setDescription(description);
+		this.notifyDataSetChanged();
 	}
 	
 	public void addNewSecret(String description){
 		Secret secret = new Secret(description);
 		secrets.add(secret);
+		Log.d("lista", "added: "+secret.getDescription());
 		this.notifyDataSetChanged();
 	}
 	
 	public void removeSecrets(){
 		secrets.clear();
+		this.notifyDataSetChanged();
 	}
 
 }
